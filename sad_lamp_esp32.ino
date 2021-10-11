@@ -1,6 +1,6 @@
 // TODO(migration to ESP32): use Serial temporary
 
-// #include <ESP8266SSDP.h>
+#include <ESP32SSDP.h>
 // #include <ESP8266WiFi.h>
 // #include <FS.h>
 // #include <FTPServer.h>
@@ -27,8 +27,6 @@ namespace
 void
 setup()
 {
-    WiFi.mode(WIFI_STA);  // explicitly set mode, esp defaults to STA+AP
-
     Serial.begin(115200);
     while (!Serial) {
         ;
@@ -41,7 +39,7 @@ setup()
     // debug_server.init();
     // SPIFFS.begin();
     // web_server.init();
-    // SSDP_init();
+    SSDP_init();
     // ftp_init();
 
     // web_server.set_handler(WebServer::Event::REBOOT_ESP, [&](String const& filename) { is_reboot_requested = true; });
@@ -91,6 +89,8 @@ configModeCallback(WiFiManager* wifiManager)
 void
 init_wifi()
 {
+    WiFi.mode(WIFI_STA);  // explicitly set mode, esp defaults to STA+AP
+
     // WiFiManager, Local intialization. Once its business is done, there is no need to keep it around
     WiFiManager wifiManager(DGB_STREAM);
 
@@ -125,7 +125,6 @@ init_wifi()
     DEBUG_PRINTLN();
 }
 
-/*
 void
 SSDP_init()
 {
@@ -140,11 +139,16 @@ SSDP_init()
     // SSDP.setModelURL("http://adress.ru/page/");
     SSDP.setManufacturer(F("Lambin Alexey"));
     // SSDP.setManufacturerURL("http://www.address.ru");
-    SSDP.begin();
+    auto res = SSDP.begin();
 
-    DEBUG_PRINTLN(F("SSDP initialized"));
+    // TODO(migration to ESP32): SSDP depends on WebServer. Looks like it needs to read description.xml. So, need to
+    // enable WebServer first
+    // TODO: set icon for device. Refer here (https://github.com/luc-github/ESP32SSDP/blob/master/examples/SSDP/SSDP.ino)
+    // to know how to do it
+    DEBUG_PRINTLN(PSTR("SSDP initialization result: ") + res ? "SUCCESS" : "FAILED");
 }
 
+/*
 void
 ftp_init()
 {
