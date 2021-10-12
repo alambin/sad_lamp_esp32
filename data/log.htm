@@ -1,0 +1,45 @@
+<html>
+
+<head>
+  <meta http-equiv="Content-type" content="text/html; charset=utf-8">
+  <title>Debug log</title>
+  <link rel="stylesheet" href="style.css">
+  <link type="image/x-icon" rel="shortcut icon" href="favicon.ico">
+  <script src="debug_log.js"></script>
+</head>
+
+<body>
+  <h3 class="top">SAD-Lamp - Help</h3>
+  <div class="menu">
+    <a href="index.htm">Main</a>
+    <a href="settings.htm">Settings</a>
+    <a href="help.htm">Help</a>
+    <a href="log.htm">Debug log</a>
+    <a href='edit'>File upload</a>
+  </div>
+
+  <div class="debug_log" id="debug_log"></div>
+
+  <p style="margin:8px 0px">
+    <button id="reading_logs_button" onclick="toggle_reading_logs();">Start reading logs</button>
+  </p>
+  <br>
+  <p style="margin-top: 5px; margin-bottom: 8px;"><b>Send command to Arduino:</b><Br>
+    <input type="text" id="arduino_command" size="40" style="margin-top: 5px; width:500px;"></p>
+  <input type="button" value="Send" onclick="send_arduino_command();">
+
+</body>
+
+<script>
+  document.getElementById("arduino_command").addEventListener("keyup",
+    function (event) {
+      if (!event) {
+        var event = window.event;
+      }
+      event.preventDefault();
+      if (event.keyCode == 13) {
+        send_arduino_command();
+      }
+    });</script>
+
+</html>
