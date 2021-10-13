@@ -5,8 +5,8 @@
 
 #include <ESP32SSDP.h>
 // #include <ESP8266WiFi.h>
+#include <FTPServer.h>
 #include <SPIFFS.h>
-// #include <FTPServer.h>
 #include <WiFiManager.h>
 
 
@@ -22,7 +22,7 @@ namespace
 SadLampWebServer web_server;
 // DebugServer          debug_server(web_socket_server);
 // ArduinoCommunication arduino_communication(web_socket_server, web_server, RESET_PIN);
-// FTPServer            ftp_server(SPIFFS);
+FTPServer ftp_server(SPIFFS);
 
 bool                    is_reboot_requested{false};
 constexpr unsigned long reboot_delay{100};  // Reboot happens 100ms after receiving reboot request
@@ -44,7 +44,7 @@ setup()
     SPIFFS.begin();
     web_server.init();
     SSDP_init();
-    // ftp_init();
+    ftp_init();
 
     web_server.set_handler(SadLampWebServer::Event::REBOOT_ESP,
                            [&](String const& filename) { is_reboot_requested = true; });
@@ -68,7 +68,7 @@ loop()
     // arduino_communication.loop();
     // debug_server.loop();
     web_server.loop();
-    // ftp_server.handleFTP();
+    ftp_server.handleFTP();
 
     if (is_reboot_requested) {
         // If reboot of ESP is requested, it is triggered not immediately, but with reboot_delay. It lets ESP to finish
@@ -147,29 +147,25 @@ SSDP_init()
     // SSDP.setManufacturerURL("http://www.address.ru");
     auto res = SSDP.begin();
 
-    // TODO: set icon for device. Refer here
-    // (https://github.com/luc-github/ESP32SSDP/blob/master/examples/SSDP/SSDP.ino) to know how to do it
     DEBUG_PRINTLN(String{"SSDP initialization result: "} + (res ? "SUCCESS" : "FAILED"));
 }
 
-/*
 void
 ftp_init()
 {
     // NOTE:
-    // FTP server consumes 1% of flash and 2% of RAM
     // This is IMPORTANT: for details how to configure FTP-client visit https://github.com/nailbuster/esp8266FTPServer
     // In particular:
     // 0. Take more stable fork: https://github.com/charno/FTPClientServer
     // 1. You need to setup Filezilla(or other client) to only allow 1 connection
     // 2. It does NOT support any encryption, so you'll have to disable any form of encryption
-    // 3. Look at "Issues" folder - looks likr this library is quite unstable
+    // 3. Look at "Issues" folder - looks like this library is quite unstable
 
     // Setup the ftp server with username and password
     // ports are defined in FTPCommon.h, default is
     //   21 for the control connection
     //   50009 for the data connection (passive mode by default)
-    ftp_server.begin("esp8266", "esp8266");
+    ftp_server.begin("esp32", "esp32");
+
     DEBUG_PRINTLN("FTP server initialized");
 }
-*/
