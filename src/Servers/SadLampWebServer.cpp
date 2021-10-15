@@ -2,7 +2,6 @@
 
 #include <map>
 
-#include <ESP32SSDP.h>
 #include <SPIFFS.h>
 #include <Update.h>
 
@@ -135,9 +134,9 @@ SadLampWebServer::init()
 {
     // SSDP description
     web_server_.on("/ssdp_description.xml", HTTP_GET, [this]() {
-        // TODO: implement it in main.ino using call set_handler. Doing so we will get rid of dependency on SSDP from
-        // SadLampWebServer
-        SSDP.schema(web_server_.client());
+        if (get_ssdp_description_handler_ != nullptr) {
+            get_ssdp_description_handler_(std::move(web_server_.client()));
+        }
     });
 
     // HTTP pages to work with file system
@@ -219,6 +218,12 @@ void
 SadLampWebServer::set_handler(Event event, EventHandler handler)
 {
     handlers_[static_cast<size_t>(event)] = handler;
+}
+
+void
+SadLampWebServer::set_get_ssdp_description_handler(GetSsdpDescriptionHandler handler)
+{
+    get_ssdp_description_handler_ = handler;
 }
 
 void

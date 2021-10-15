@@ -15,9 +15,9 @@
 
 // #include "src/ArduinoCommunication.h"
 #include "src/Logger/Logger.h"
-#include "src/WebInterface/DebugServer.h"
-#include "src/WebInterface/SadLampWebServer.h"
-#include "src/WebInterface/SadLampWebSocketServer.h"
+#include "src/Servers/DebugServer.h"
+#include "src/Servers/SadLampWebServer.h"
+#include "src/Servers/SadLampWebSocketServer.h"
 
 namespace
 {
@@ -53,19 +53,19 @@ setup()
     // TODO: in 1/4 times after reboot ESP32 can not connect with previous WiFi settings and you have to reset it
     // manually 1 more time
     web_server.set_handler(SadLampWebServer::Event::REBOOT_ESP,
-                           [&](String const& filename) { is_reboot_requested = true; });
+                           [&is_reboot_requested](String const& filename) { is_reboot_requested = true; });
 
     // Request to reset wifi settings can come from WebUI and from Arduino (via potentiometer and switching from auto to
     // manual mode and vice versa)
-    auto WiFiSettingsResetHandler = [&]() {
+    auto WiFiSettingsResetHandler = [&is_reboot_requested](String const&) {
         WiFiManager wifi_manager(DGB_STREAM);
         wifi_manager.erase();
         is_reboot_requested = true;
     };
-    web_server.set_handler(SadLampWebServer::Event::RESET_WIFI_SETTINGS,
-                           [&](String const&) { WiFiSettingsResetHandler(); });
-    // arduino_communication.set_handler(ArduinoCommunication::Event::RESET_WIFI_SETTINGS,
-    //                                   [&]() { WiFiSettingsResetHandler(); });
+    web_server.set_handler(SadLampWebServer::Event::RESET_WIFI_SETTINGS, WiFiSettingsResetHandler);
+    // arduino_communication.set_handler(ArduinoCommunication::Event::RESET_WIFI_SETTINGS, WiFiSettingsResetHandler);
+
+    web_server.set_get_ssdp_description_handler([&SSDP](WiFiClient wiFiClient) { SSDP.schema(std::move(wiFiClient)); });
 }
 
 void

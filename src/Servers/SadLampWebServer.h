@@ -7,6 +7,7 @@
 #include <FS.h>
 #include <WString.h>
 #include <WebServer.h>
+#include <WiFiClient.h>
 
 // TODO: This web server handles filesystem operations (list, create, delete files, etc.) inside. Better to move it
 // out to new entity. But for simple UI it is fine.
@@ -17,16 +18,19 @@ public:
     {
         RESET_WIFI_SETTINGS = 0,
         REBOOT_ESP,
+        GET_SSDP_DESCRIPTION,
 
         NUM_OF_EVENTS
     };
-    using EventHandler = std::function<void(String const& parameters)>;
+    using EventHandler              = std::function<void(String const& parameters)>;
+    using GetSsdpDescriptionHandler = std::function<void(WiFiClient wiFiClient)>;
 
     SadLampWebServer();
     void init();
     void loop();
 
     void set_handler(Event event, EventHandler handler);
+    void set_get_ssdp_description_handler(GetSsdpDescriptionHandler handler);
 
 private:
     void reply_ok();
@@ -50,6 +54,7 @@ private:
     WebServer                                                            web_server_;
     fs::File                                                             upload_file_;
     std::array<EventHandler, static_cast<uint8_t>(Event::NUM_OF_EVENTS)> handlers_;
+    GetSsdpDescriptionHandler                                            get_ssdp_description_handler_{nullptr};
     String                                                               esp_firmware_upload_error_;
 };
 
