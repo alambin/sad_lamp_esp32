@@ -1,5 +1,7 @@
 #include "BufferedLogger.h"
 
+namespace Utils
+{
 BufferedLogger&
 BufferedLogger::instance()
 {
@@ -105,3 +107,5 @@ BufferedLogger::shrink()
     }
     return 0;
 }
+
+}  // namespace Utils

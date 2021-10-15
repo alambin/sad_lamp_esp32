@@ -1,8 +1,10 @@
 #include "DebugServer.h"
 
-#include "src/Logger/BufferedLogger.h"
-#include "src/Logger/Logger.h"
+#include "src/Utils/BufferedLogger.h"
+#include "src/Utils/Logger.h"
 
+namespace Servers
+{
 DebugServer::DebugServer(SadLampWebSocketServer& web_socket_server)
   : web_socket_server_(web_socket_server)
 {
@@ -47,11 +49,13 @@ DebugServer::loop()
 void
 DebugServer::send_buffered_logs()
 {
-    if (!debugger_clients_ids_.empty() && (BufferedLogger::instance().get_log().length() > 0)) {
-        auto& log = BufferedLogger::instance().get_log();
+    if (!debugger_clients_ids_.empty() && (Utils::BufferedLogger::instance().get_log().length() > 0)) {
+        auto& log = Utils::BufferedLogger::instance().get_log();
         for (auto client_id : debugger_clients_ids_) {
             web_socket_server_.send(client_id, log);
         }
-        BufferedLogger::instance().clear();
+        Utils::BufferedLogger::instance().clear();
     }
 }
+
+}  // namespace Servers

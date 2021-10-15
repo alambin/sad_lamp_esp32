@@ -1,7 +1,9 @@
 #include "SadLampWebSocketServer.h"
 
-#include "src/Logger/Logger.h"
+#include "src/Utils/Logger.h"
 
+namespace Servers
+{
 SadLampWebSocketServer::SadLampWebSocketServer()
   : web_socket_server_{port_}
   , handlers_{
@@ -178,3 +180,5 @@ SadLampWebSocketServer::process_command(uint8_t client_id, String const& command
 
     DEBUG_PRINTLN(String{"ERROR: received unknown command \""} + command + "\"");
 }
+
+}  // namespace Servers

@@ -1,9 +1,11 @@
-#ifndef SRC_BUFFEREDLOGGER_H_
-#define SRC_BUFFEREDLOGGER_H_
+#ifndef SRC_UTILS_BUFFEREDLOGGER_H_
+#define SRC_UTILS_BUFFEREDLOGGER_H_
 
 #include <Stream.h>
 #include <WString.h>
 
+namespace Utils
+{
 class BufferedLogger : public Stream
 {
 public:
@@ -44,4 +46,6 @@ private:
     uint16_t buf_size_;
 };
 
-#endif  // SRC_BUFFEREDLOGGER_H_
+}  // namespace Utils
+
+#endif  // SRC_UTILS_BUFFEREDLOGGER_H_

@@ -1,10 +1,12 @@
-#ifndef SRC_DEBUGSERVER_H_
-#define SRC_DEBUGSERVER_H_
+#ifndef SRC_SERVERS_DEBUGSERVER_H_
+#define SRC_SERVERS_DEBUGSERVER_H_
 
 #include <vector>
 
 #include "SadLampWebSocketServer.h"
 
+namespace Servers
+{
 // Uses BufferedLogger singleton to get buffered logs and send them to all connected debugger clients
 class DebugServer
 {
@@ -20,4 +22,6 @@ private:
     std::vector<uint8_t>    debugger_clients_ids_;
 };
 
-#endif  // SRC_DEBUGSERVER_H_
+}  // namespace Servers
+
+#endif  // SRC_SERVERS_DEBUGSERVER_H_

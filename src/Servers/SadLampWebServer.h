@@ -1,5 +1,5 @@
-#ifndef SRC_SADLAMPWEBSERVER_H_
-#define SRC_SADLAMPWEBSERVER_H_
+#ifndef SRC_SERVERS_SADLAMPWEBSERVER_H_
+#define SRC_SERVERS_SADLAMPWEBSERVER_H_
 
 #include <array>
 #include <functional>
@@ -9,6 +9,8 @@
 #include <WebServer.h>
 #include <WiFiClient.h>
 
+namespace Servers
+{
 // TODO: This web server handles filesystem operations (list, create, delete files, etc.) inside. Better to move it
 // out to new entity. But for simple UI it is fine.
 class SadLampWebServer
@@ -58,4 +60,6 @@ private:
     String                                                               esp_firmware_upload_error_;
 };
 
-#endif  // SRC_SADLAMPWEBSERVER_H_
+}  // namespace Servers
+
+#endif  // SRC_SERVERS_SADLAMPWEBSERVER_H_

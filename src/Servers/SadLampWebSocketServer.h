@@ -1,10 +1,12 @@
-#ifndef SRC_SADLAMPWEBSOCKETSERVER_H_
-#define SRC_SADLAMPWEBSOCKETSERVER_H_
+#ifndef SRC_SERVERS_SADLAMPWEBSOCKETSERVER_H_
+#define SRC_SERVERS_SADLAMPWEBSOCKETSERVER_H_
 
 #include <array>
 
 #include <WebSocketsServer.h>
 
+namespace Servers
+{
 // Facade for communication over WebSocket. Can be used by another servers to implement their functionality
 class SadLampWebSocketServer
 {
@@ -47,5 +49,6 @@ private:
     std::array<EventHandler, static_cast<uint8_t>(Event::NUM_OF_EVENTS)> handlers_;
 };
 
+}  // namespace Servers
 
-#endif  // SRC_SADLAMPWEBSOCKETSERVER_H_
+#endif  // SRC_SERVERS_SADLAMPWEBSOCKETSERVER_H_

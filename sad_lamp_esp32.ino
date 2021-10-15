@@ -14,16 +14,17 @@
 
 
 // #include "src/ArduinoCommunication.h"
-#include "src/Logger/Logger.h"
 #include "src/Servers/DebugServer.h"
 #include "src/Servers/SadLampWebServer.h"
 #include "src/Servers/SadLampWebSocketServer.h"
+#include "src/Utils/Logger.h"
 
 namespace
 {
-SadLampWebSocketServer web_socket_server;  // Use this instance as facade to implement other servers (ex. DebugServer)
-SadLampWebServer       web_server;
-DebugServer            debug_server(web_socket_server);
+Servers::SadLampWebSocketServer
+                          web_socket_server;  // Use this instance as facade to implement other servers (ex. DebugServer)
+Servers::SadLampWebServer web_server;
+Servers::DebugServer      debug_server(web_socket_server);
 // ArduinoCommunication arduino_communication(web_socket_server, web_server, RESET_PIN);
 FTPServer ftp_server(SPIFFS);
 
@@ -52,7 +53,7 @@ setup()
 
     // TODO: in 1/4 times after reboot ESP32 can not connect with previous WiFi settings and you have to reset it
     // manually 1 more time
-    web_server.set_handler(SadLampWebServer::Event::REBOOT_ESP,
+    web_server.set_handler(Servers::SadLampWebServer::Event::REBOOT_ESP,
                            [&is_reboot_requested](String const& filename) { is_reboot_requested = true; });
 
     // Request to reset wifi settings can come from WebUI and from Arduino (via potentiometer and switching from auto to
@@ -62,7 +63,7 @@ setup()
         wifi_manager.erase();
         is_reboot_requested = true;
     };
-    web_server.set_handler(SadLampWebServer::Event::RESET_WIFI_SETTINGS, WiFiSettingsResetHandler);
+    web_server.set_handler(Servers::SadLampWebServer::Event::RESET_WIFI_SETTINGS, WiFiSettingsResetHandler);
     // arduino_communication.set_handler(ArduinoCommunication::Event::RESET_WIFI_SETTINGS, WiFiSettingsResetHandler);
 
     web_server.set_get_ssdp_description_handler([&SSDP](WiFiClient wiFiClient) { SSDP.schema(std::move(wiFiClient)); });

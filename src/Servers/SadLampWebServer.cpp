@@ -5,7 +5,7 @@
 #include <SPIFFS.h>
 #include <Update.h>
 
-#include "src/Logger/Logger.h"
+#include "src/Utils/Logger.h"
 
 namespace
 {
@@ -121,6 +121,8 @@ getContentType(String const& filename)
 
 }  // namespace
 
+namespace Servers
+{
 SadLampWebServer::SadLampWebServer()
   : web_server_{port_}
   , handlers_{
@@ -656,3 +658,5 @@ SadLampWebServer::handle_reboot_esp()
         handlers_[static_cast<size_t>(Event::REBOOT_ESP)]("");
     }
 }
+
+}  // namespace Servers
