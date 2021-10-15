@@ -1,12 +1,12 @@
-#ifndef SRC_WEBSOCKETSERVER_H_
-#define SRC_WEBSOCKETSERVER_H_
+#ifndef SRC_SADLAMPWEBSOCKETSERVER_H_
+#define SRC_SADLAMPWEBSOCKETSERVER_H_
 
 #include <array>
 
 #include <WebSocketsServer.h>
 
 // Facade for communication over WebSocket. Can be used by another servers to implement their functionality
-class WebSocketServer
+class SadLampWebSocketServer
 {
 public:
     enum class Event : uint8_t
@@ -29,7 +29,7 @@ public:
     };
     using EventHandler = std::function<void(uint8_t client_id, String const& parameters)>;
 
-    WebSocketServer();
+    SadLampWebSocketServer();
     void init();
     void loop();
     void set_handler(Event event, EventHandler handler);
@@ -43,9 +43,9 @@ private:
     void process_command(uint8_t client_id, String const& command);
 
     const uint16_t                                                       port_{81};
-    WebSocketsServer                                                     web_socket_;
+    WebSocketsServer                                                     web_socket_server_;
     std::array<EventHandler, static_cast<uint8_t>(Event::NUM_OF_EVENTS)> handlers_;
 };
 
 
-#endif  // SRC_WEBSOCKETSERVER_H_
+#endif  // SRC_SADLAMPWEBSOCKETSERVER_H_

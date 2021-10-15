@@ -3,21 +3,21 @@
 
 #include <vector>
 
-#include "WebSocketServer.h"
+#include "SadLampWebSocketServer.h"
 
 // Uses BufferedLogger singleton to get buffered logs and send them to all connected debugger clients
 class DebugServer
 {
 public:
-    explicit DebugServer(WebSocketServer& web_socket_server);
+    explicit DebugServer(SadLampWebSocketServer& web_socket_server);
     void init();
     void loop();
 
 private:
     void send_buffered_logs();
 
-    WebSocketServer&     web_socket_server_;
-    std::vector<uint8_t> debugger_clients_ids_;
+    SadLampWebSocketServer& web_socket_server_;
+    std::vector<uint8_t>    debugger_clients_ids_;
 };
 
 #endif  // SRC_DEBUGSERVER_H_

@@ -1,9 +1,9 @@
-#include "WebSocketServer.h"
+#include "SadLampWebSocketServer.h"
 
 #include "Logger.h"
 
-WebSocketServer::WebSocketServer()
-  : web_socket_{port_}
+SadLampWebSocketServer::SadLampWebSocketServer()
+  : web_socket_server_{port_}
   , handlers_{
         nullptr,
     }
@@ -11,42 +11,42 @@ WebSocketServer::WebSocketServer()
 }
 
 void
-WebSocketServer::init()
+SadLampWebSocketServer::init()
 {
-    web_socket_.begin();
-    web_socket_.onEvent([this](uint8_t client_num, WStype_t event_type, uint8_t* payload, size_t lenght) {
+    web_socket_server_.begin();
+    web_socket_server_.onEvent([this](uint8_t client_num, WStype_t event_type, uint8_t* payload, size_t lenght) {
         on_event(client_num, event_type, payload, lenght);
     });
 }
 
 void
-WebSocketServer::loop()
+SadLampWebSocketServer::loop()
 {
-    web_socket_.loop();
+    web_socket_server_.loop();
 }
 
 void
-WebSocketServer::set_handler(Event event, EventHandler handler)
+SadLampWebSocketServer::set_handler(Event event, EventHandler handler)
 {
     handlers_[static_cast<size_t>(event)] = handler;
 }
 
 void
-WebSocketServer::send(uint8_t client_id, String const& message)
+SadLampWebSocketServer::send(uint8_t client_id, String const& message)
 {
     // Use sendBIN() instead of sendTXT(). Binary-based communication let transfering special characters.
     // Ex. Arduino when rebooted can send via Serial port some special (non printable) characters. It ruins text-based
     // web-socket but binary-based web-socket handles it well.
-    web_socket_.sendBIN(client_id, (const uint8_t*)message.c_str(), message.length());
+    web_socket_server_.sendBIN(client_id, (const uint8_t*)message.c_str(), message.length());
 }
 
 void
-WebSocketServer::on_event(uint8_t client_id, WStype_t event_type, uint8_t* payload, size_t lenght)
+SadLampWebSocketServer::on_event(uint8_t client_id, WStype_t event_type, uint8_t* payload, size_t lenght)
 {
     switch (event_type) {
     case WStype_CONNECTED: {
         // New websocket connection is established
-        IPAddress ip = web_socket_.remoteIP(client_id);
+        IPAddress ip = web_socket_server_.remoteIP(client_id);
         DEBUG_PRINTF("[%u] Connected from %d.%d.%d.%d url: %s\n", client_id, ip[0], ip[1], ip[2], ip[3], payload);
         if (handlers_[static_cast<size_t>(Event::CONNECTED)] != nullptr) {
             handlers_[static_cast<size_t>(Event::CONNECTED)](client_id, "");
@@ -71,7 +71,10 @@ WebSocketServer::on_event(uint8_t client_id, WStype_t event_type, uint8_t* paylo
 }
 
 void
-WebSocketServer::trigger_event(uint8_t client_id, String const& input_data, String const& command_name, Event event)
+SadLampWebSocketServer::trigger_event(uint8_t       client_id,
+                                      String const& input_data,
+                                      String const& command_name,
+                                      Event         event)
 {
     if (input_data.length() <= (command_name.length() + 1)) {
         DEBUG_PRINTLN(String{"ERROR: command \""} + command_name + "\" doesn't have parameters");
@@ -86,7 +89,7 @@ WebSocketServer::trigger_event(uint8_t client_id, String const& input_data, Stri
 }
 
 void
-WebSocketServer::process_command(uint8_t client_id, String const& command)
+SadLampWebSocketServer::process_command(uint8_t client_id, String const& command)
 {
     if (command == "start_reading_logs") {
         DEBUG_PRINTLN(String{"Received command \""} + command + "\"");

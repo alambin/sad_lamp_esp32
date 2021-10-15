@@ -12,13 +12,13 @@
 #include "src/DebugServer.h"
 #include "src/Logger.h"
 #include "src/SadLampWebServer.h"
-#include "src/WebSocketServer.h"
+#include "src/SadLampWebSocketServer.h"
 
 namespace
 {
-WebSocketServer  web_socket_server;  // Use this instance as facade to implement other servers (ex. DebugServer)
-SadLampWebServer web_server;
-DebugServer      debug_server(web_socket_server);
+SadLampWebSocketServer web_socket_server;  // Use this instance as facade to implement other servers (ex. DebugServer)
+SadLampWebServer       web_server;
+DebugServer            debug_server(web_socket_server);
 // ArduinoCommunication arduino_communication(web_socket_server, web_server, RESET_PIN);
 FTPServer ftp_server(SPIFFS);
 

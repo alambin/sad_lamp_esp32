@@ -3,7 +3,7 @@
 #include "BufferedLogger.h"
 #include "Logger.h"
 
-DebugServer::DebugServer(WebSocketServer& web_socket_server)
+DebugServer::DebugServer(SadLampWebSocketServer& web_socket_server)
   : web_socket_server_(web_socket_server)
 {
 }
@@ -11,20 +11,20 @@ DebugServer::DebugServer(WebSocketServer& web_socket_server)
 void
 DebugServer::init()
 {
-    web_socket_server_.set_handler(WebSocketServer::Event::START_READING_LOGS,
+    web_socket_server_.set_handler(SadLampWebSocketServer::Event::START_READING_LOGS,
                                    [&](uint8_t client_id, String const& parameters) {
                                        debugger_clients_ids_.push_back(client_id);
                                        send_buffered_logs();
                                    });
     web_socket_server_.set_handler(
-        WebSocketServer::Event::STOP_READING_LOGS, [&](uint8_t client_id, String const& parameters) {
+        SadLampWebSocketServer::Event::STOP_READING_LOGS, [&](uint8_t client_id, String const& parameters) {
             send_buffered_logs();
             debugger_clients_ids_.erase(
                 std::remove(debugger_clients_ids_.begin(), debugger_clients_ids_.end(), client_id),
                 debugger_clients_ids_.end());
         });
     web_socket_server_.set_handler(
-        WebSocketServer::Event::DISCONNECTED, [&](uint8_t client_id, String const& parameters) {
+        SadLampWebSocketServer::Event::DISCONNECTED, [&](uint8_t client_id, String const& parameters) {
             debugger_clients_ids_.erase(
                 std::remove(debugger_clients_ids_.begin(), debugger_clients_ids_.end(), client_id),
                 debugger_clients_ids_.end());
