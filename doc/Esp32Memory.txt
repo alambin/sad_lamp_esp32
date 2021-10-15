@@ -1,0 +1,86 @@
+Here are some notes, related to ESP32 memory
+1. Empty sketch takes 204470/1310720(15%) of program storage space and 13416/327680(4%) of dynamic memory
+
+
+2. To show more compile info from Arduino IDE: File->Preferences: show verbose output during compilation.
+   There you will see path in Temp folder, where your binary is actually built.
+
+3. According to command line for linking, LOTS of libraries are linked in by default, such as:
+     core lib (20 MB), -lesp_websocket_client, -lesp_https_server, -lcore, -lfatfs, -lfreertos, -lethernet, ....
+   Their code is ignorred if not used. So, if you used some functions from ex. String and decided to use another,
+   (never used before), code size will increase!
+
+4. To get function sizes, use commands
+   set PATH=%PATH%;C:\Users\alambin\AppData\Local\Arduino15\packages\esp32\tools\xtensa-esp32-elf-gcc\1.22.0-97-gc752ad5-5.2.0\bin
+   xtensa-esp32-elf-nm --print-size --radix=d sad_lamp_esp32.ino.elf
+
+5. To get ELF sections sizes, use commands
+   set PATH=%PATH%;C:\Users\alambin\AppData\Local\Arduino15\packages\esp32\tools\xtensa-esp32-elf-gcc\1.22.0-97-gc752ad5-5.2.0\bin
+   xtensa-esp32-elf-size -A -d sketch_oct14a.ino.elf
+
+
+6. SECTIONS
+6.1 What Arduino IDE is showing as "program storage space" is summ of following sections:
+      .rtc.text
+      .iram0.vectors (Interrupt handler vectors)
+      .iram0.text    (Time critical code)
+      .dram0.data    (Non-constant data)
+      .flash.rodata  (Constants)
+      .flash.text    (Regular code)
+    What Arduino IDE is showing as "dynamic memory" is summ of following sections:
+       .dram0.data
+       .dram0.bss    (Zero initilized data)
+    Pay attention, that .dram0.data section is counted in both!
+
+6.2 Global data variables come to BSS section (), which is treated by Arduino IDE as "dynamic memory"
+    Only constatns are going to .flash.rodata
+
+6.3 ESP32 CPU datasheet: https://www.espressif.com/sites/default/files/documentation/esp32_technical_reference_manual_en.pdf#sysmem
+    Arduino IDE states that dynamic ram is 320 kB (327680). This is size of Internal SRAM 0 (192 kB) + Internal SRAM 1 (128 kB).
+
+
+7. PARTITIONS
+7.1 Partision map (default):
+    # Name,   Type, SubType, Offset,  Size, Flags
+    36 kB reserved?
+    nvs,      data, nvs,     0x9000,  0x5000,      // 20 kB
+    otadata,  data, ota,     0xe000,  0x2000,      // 8  kB
+    app0,     app,  ota_0,   0x10000, 0x140000,    // 1280 kB
+    app1,     app,  ota_1,   0x150000,0x140000,    // 1280 kB
+    spiffs,   data, spiffs,  0x290000,0x170000,    // 1472 kB
+    In total exactly 4 MB
+
+7.2 Arduino IDE says that maximum code size is 1310720 bytes = 1280 kB = size of one OTA partition
+
+7.3 On ESP8266 I could change partition splitting of SPI flash right from Arduino IDE by choosing how much SPI flash
+    should be allocated for OTA, how much for SPIFFS. With ESP32 board "esp32doit-devkit-v1" This option is not
+    available directly in Arduino IDE by default. But most probably here is the way to change it:
+7.3.1 Folder, containing list of predefined partition tables (for different boards):
+      C:\Users\alambin\AppData\Local\Arduino15\packages\esp32\hardware\esp32\1.0.6\tools\partitions
+7.3.2 Good description of format of partition tables
+      https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-guides/partition-tables.html
+7.3.3 File, describing all ESP32 boards, available in Arduino IDE:
+      C:\Users\alambin\AppData\Local\Arduino15\packages\esp32\hardware\esp32\1.0.6\boards.txt
+      Pay attention to the following options:
+      - ".build.partitions" sets partition table for your board (I was using "esp32doit-devkit-v1")
+        Most probably variable value = name of file from folder with predefined partitions (but need to check)
+      - Looks like using this file you can make different options for partition tables available in Arduino IDE,
+        if they are supported by chosen board. Ex. search for "PartitionScheme" parameter
+7.3.4 So, you can copy everything related to "esp32doit-devkit-v1" as new board and create several options for
+      partitions, if you need it (ex. image doesn't fit standard OTA partition, but SPIFFS particion can be reduced).
+      Or even simpler - add new option for new partition table, as described here https://robotzero.one/arduino-ide-partitions/
+      (read "Pre v1.0.5 instructions…"). I tried it and new partition table appeared in Arduino IDE (I didn't try to
+      use it on ESP32 board)
+
+7.4. ESP32 Hardware Library v1.0.5 New Partition System.
+     Starting from v1.0.5 to use custom partition table all you need is just to add a new partition description file
+     named partitions.csv to the same directory as your Sketch.
+
+8. File, describing compile and link parameters, etc.
+   C:\Users\alambin\AppData\Local\Arduino15\packages\esp32\hardware\esp32\1.0.6\platform.txt
+
+9. Pin names, available in code in Arduino IDE, for different boards are defined in folders
+   C:\Users\alambin\AppData\Local\Arduino15\packages\esp32\hardware\esp32\1.0.6\variants
+
+10. Good description of OTA in ESP32:
+   https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/system/ota.html

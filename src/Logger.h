@@ -1,40 +1,46 @@
-#ifndef LOGGER_H_
-#define LOGGER_H_
+#ifndef SRC_LOGGER_H_
+#define SRC_LOGGER_H_
 
-#define DBG_OUTPUT_PORT Serial
-// #define DBG_OUTPUT_PORT Web
+// #define DBG_OUTPUT_PORT_SERIAL
+#define DBG_OUTPUT_PORT_WEB
+// #define DBG_OUTPUT_PORT_BOTH
 
-// Set it if you want to log to both: web page and Serial
-// It should be always disabled if ESP is connected to Arduino. Otherwise ESP will send a lot of logs into Arduino
-constexpr bool should_log_to_serial = false; 
-
-#if DBG_OUTPUT_PORT == Serial
+#ifdef DBG_OUTPUT_PORT_SERIAL
 #define DGB_STREAM Serial
+#else
+#include "BufferedLogger.h"
+#define DGB_STREAM BufferedLogger::instance()
 #endif
 
-#if DBG_OUTPUT_PORT == Web
-// TODO(migration to ESP32): use Serial temporary
-// #include "BufferedLogger.h"
-// #define DGB_STREAM BufferedLogger::instance()
-#endif
-
-#define DEBUG_PRINT(msg)          \
-    {                             \
-        DGB_STREAM.print(msg);    \
-        if (should_log_to_serial) \
-            Serial.print(msg);    \
+#ifndef DBG_OUTPUT_PORT_BOTH
+#define DEBUG_PRINT(msg)       \
+    {                          \
+        DGB_STREAM.print(msg); \
     }
-#define DEBUG_PRINTLN(msg)        \
-    {                             \
-        DGB_STREAM.println(msg);  \
-        if (should_log_to_serial) \
-            Serial.println(msg);  \
+#define DEBUG_PRINTLN(msg)       \
+    {                            \
+        DGB_STREAM.println(msg); \
     }
 #define DEBUG_PRINTF(...)                 \
     {                                     \
         DGB_STREAM.printf_P(__VA_ARGS__); \
-        if (should_log_to_serial)         \
-            Serial.printf_P(__VA_ARGS__); \
     }
+#else
+#define DEBUG_PRINT(msg)                       \
+    {                                          \
+        Serial.print(msg);                     \
+        BufferedLogger::instance().print(msg); \
+    }
+#define DEBUG_PRINTLN(msg)                       \
+    {                                            \
+        Serial.println(msg);                     \
+        BufferedLogger::instance().println(msg); \
+    }
+#define DEBUG_PRINTF(...)                                 \
+    {                                                     \
+        Serial.printf_P(__VA_ARGS__);                     \
+        BufferedLogger::instance().printf_P(__VA_ARGS__); \
+    }
+#endif
 
-#endif  // LOGGER_H_
+#endif  // SRC_LOGGER_H_

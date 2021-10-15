@@ -1,26 +1,24 @@
 // TODO(migration to ESP32): use Serial temporary
 
-
 // TODO: replace all F(), FPSTR(), and PSTR()
 
 #include <ESP32SSDP.h>
-// #include <ESP8266WiFi.h>
 #include <FTPServer.h>
 #include <SPIFFS.h>
 #include <WiFiManager.h>
 
 
 // #include "src/ArduinoCommunication.h"
-// #include "src/DebugServer.h"
-#include "src/SadLampWebServer.h"
-// #include "src/WebSocketServer.h"
+#include "src/DebugServer.h"
 #include "src/Logger.h"
+#include "src/SadLampWebServer.h"
+#include "src/WebSocketServer.h"
 
 namespace
 {
-// WebSocketServer      web_socket_server;  // Use this instance as facade to implement other servers (ex. DebugServer)
+WebSocketServer  web_socket_server;  // Use this instance as facade to implement other servers (ex. DebugServer)
 SadLampWebServer web_server;
-// DebugServer          debug_server(web_socket_server);
+DebugServer      debug_server(web_socket_server);
 // ArduinoCommunication arduino_communication(web_socket_server, web_server, RESET_PIN);
 FTPServer ftp_server(SPIFFS);
 
@@ -40,12 +38,15 @@ setup()
     // delay(3000);
 
     init_wifi();
-    // debug_server.init();
     SPIFFS.begin();
+    debug_server.init();
+    web_socket_server.init();
     web_server.init();
     SSDP_init();
     ftp_init();
 
+    // TODO: in 1/4 times after reboot ESP32 can not connect with previous WiFi settings and you have to reset it
+    // manually 1 more time
     web_server.set_handler(SadLampWebServer::Event::REBOOT_ESP,
                            [&](String const& filename) { is_reboot_requested = true; });
 
@@ -66,8 +67,9 @@ void
 loop()
 {
     // arduino_communication.loop();
-    // debug_server.loop();
+    debug_server.loop();
     web_server.loop();
+    web_socket_server.loop();
     ftp_server.handleFTP();
 
     if (is_reboot_requested) {
