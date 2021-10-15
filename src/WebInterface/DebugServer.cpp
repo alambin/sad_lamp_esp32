@@ -1,7 +1,7 @@
 #include "DebugServer.h"
 
-#include "BufferedLogger.h"
-#include "Logger.h"
+#include "src/Logger/BufferedLogger.h"
+#include "src/Logger/Logger.h"
 
 DebugServer::DebugServer(SadLampWebSocketServer& web_socket_server)
   : web_socket_server_(web_socket_server)

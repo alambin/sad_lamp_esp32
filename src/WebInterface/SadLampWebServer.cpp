@@ -6,7 +6,7 @@
 #include <SPIFFS.h>
 #include <Update.h>
 
-#include "Logger.h"
+#include "src/Logger/Logger.h"
 
 namespace
 {

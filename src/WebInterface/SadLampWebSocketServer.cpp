@@ -1,6 +1,6 @@
 #include "SadLampWebSocketServer.h"
 
-#include "Logger.h"
+#include "src/Logger/Logger.h"
 
 SadLampWebSocketServer::SadLampWebSocketServer()
   : web_socket_server_{port_}

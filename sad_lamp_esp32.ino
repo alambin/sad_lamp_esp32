@@ -2,6 +2,11 @@
 
 // TODO: replace all F(), FPSTR(), and PSTR()
 
+// NOTE! To make code buildable you should open platform.txt (ex. in this folder
+// C:\Users\<user>\AppData\Local\Arduino15\packages\esp32\hardware\esp32\1.0.6) and add "-I{build.path}/sketch" to the
+// end of compiler.cpreprocessor.flags variable definition.
+// Its a shame for Arduino IDE developers not to let users to configure include pathes! Change above is just enabling
+// common practive - its adding root of source tree to include path.
 #include <ESP32SSDP.h>
 #include <FTPServer.h>
 #include <SPIFFS.h>
@@ -9,10 +14,10 @@
 
 
 // #include "src/ArduinoCommunication.h"
-#include "src/DebugServer.h"
-#include "src/Logger.h"
-#include "src/SadLampWebServer.h"
-#include "src/SadLampWebSocketServer.h"
+#include "src/Logger/Logger.h"
+#include "src/WebInterface/DebugServer.h"
+#include "src/WebInterface/SadLampWebServer.h"
+#include "src/WebInterface/SadLampWebSocketServer.h"
 
 namespace
 {
