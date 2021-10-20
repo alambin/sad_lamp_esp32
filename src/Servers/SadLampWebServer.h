@@ -4,15 +4,14 @@
 #include <array>
 #include <functional>
 
-#include <FS.h>
 #include <WString.h>
 #include <WebServer.h>
 #include <WiFiClient.h>
 
+#include "src/Utils/FS.h"
+
 namespace Servers
 {
-// TODO: This web server handles filesystem operations (list, create, delete files, etc.) inside. Better to move it
-// out to new entity. But for simple UI it is fine.
 class SadLampWebServer
 {
 public:
@@ -54,7 +53,7 @@ private:
 
     const uint16_t                                                       port_{80};
     WebServer                                                            web_server_;
-    fs::File                                                             upload_file_;
+    Utils::FS::File                                                      upload_file_;
     std::array<EventHandler, static_cast<uint8_t>(Event::NUM_OF_EVENTS)> handlers_;
     GetSsdpDescriptionHandler                                            get_ssdp_description_handler_{nullptr};
     String                                                               esp_firmware_upload_error_;

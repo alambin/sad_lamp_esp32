@@ -2,7 +2,6 @@
 
 #include <map>
 
-#include <SPIFFS.h>
 #include <Update.h>
 
 #include "src/Utils/Logger.h"
@@ -13,69 +12,6 @@ static const char TEXT_PLAIN[]     = "text/plain";
 static const char TEXT_JSON[]      = "text/json";
 static const char FS_INIT_ERROR[]  = "FS INIT ERROR";
 static const char FILE_NOT_FOUND[] = "FileNotFound";
-
-String
-check_for_unsupported_path(String const& filename)
-{
-    String error;
-    if (!filename.startsWith("/")) {
-        error += "!NO_LEADING_SLASH! ";
-    }
-    if (filename.indexOf("//") != -1) {
-        error += "!DOUBLE_SLASH! ";
-    }
-    if (filename.endsWith("/")) {
-        error += "!TRAILING_SLASH! ";
-    }
-    return error;
-}
-
-// As some FS (e.g. LittleFS) delete the parent folder when the last child has been removed,
-// return the path of the closest parent still existing
-String
-last_existing_parent(String path)
-{
-    while (!path.isEmpty() && !SPIFFS.exists(path)) {
-        if (path.lastIndexOf('/') > 0) {
-            path = path.substring(0, path.lastIndexOf('/'));
-        }
-        else {
-            path.clear();  // No slash => the top folder does not exist
-        }
-    }
-    DEBUG_PRINTLN(String{"Last existing parent: '"} + path + "'");
-    return path;
-}
-
-bool
-case_insensitive_string_less(String const& str1, String const& str2)
-{
-    auto min_size = (str1.length() < str2.length()) ? str1.length() : str2.length();
-    for (size_t i = 0; i < min_size; ++i) {
-        if (std::toupper(str1[i]) != std::toupper(str2[i])) {
-            return std::toupper(str1[i]) < std::toupper(str2[i]);
-        }
-    }
-    return str1.length() < str2.length();
-}
-
-auto filename_less = [](String const& l, String const& r) {
-    // return std::lexicographical_compare(l.begin(), l.end(), r.begin(), r.end());
-    if ((l[0] == '/') && (r[0] != '/')) {
-        // "l" is directory
-        return true;
-    }
-    else if ((r[0] == '/') && (l[0] != '/')) {
-        // "r" is directory
-        return false;
-    }
-    else if ((l[0] == '/') && (r[0] == '/')) {
-        // Both strings are directory names
-        return case_insensitive_string_less(l.substring(1), r.substring(1));
-    }
-    // Regular file names
-    return case_insensitive_string_less(l, r);
-};
 
 String
 getContentType(String const& filename)
@@ -162,7 +98,7 @@ SadLampWebServer::init()
         "/edit", HTTP_POST, [this]() { reply_ok(); }, [this]() { handle_file_upload(); });
 
     // Called when the url is not defined here
-    // Use it to load content from SPIFFS
+    // Use it to load content from FS
     web_server_.onNotFound([this]() {
         if (!handle_file_read(web_server_.uri())) {
             reply_not_found(FILE_NOT_FOUND);
@@ -249,6 +185,7 @@ SadLampWebServer::reply_ok_json_with_msg(String const& msg)
 void
 SadLampWebServer::reply_not_found(String const& msg)
 {
+    DEBUG_PRINTLN(msg);
     web_server_.send(404, TEXT_PLAIN, msg);
 }
 
@@ -273,66 +210,14 @@ SadLampWebServer::handle_file_list()
         reply_bad_request("DIR ARG MISSING");
     }
     String path{web_server_.arg("dir")};
-    if (path != "/" && !SPIFFS.exists(path)) {
+    if (!Utils::FS::is_directory(path)) {
         return reply_bad_request("BAD PATH");
     }
 
     DEBUG_PRINTLN(String{"handle_file_list: "} + path);
-    fs::File root = SPIFFS.open(path);
-
-    // Use the same string for every line
-    String                                            name;
-    std::map<String, String, decltype(filename_less)> files_data(filename_less);
-    String                                            output;
-    output.reserve(64);
-    while (File file = root.openNextFile()) {
-        String error{check_for_unsupported_path(file.name())};
-        if (error.length() > 0) {
-            DEBUG_PRINTLN(String{"Ignoring "} + error + file.name());
-            continue;
-        }
-
-        output += "{\"type\":\"";
-        if (file.isDirectory()) {
-            // There is no directories on SPIFFS. This code is here for compatibility with another (possible)
-            // filesystems
-            output += "dir";
-        }
-        else {
-            output += "file\",\"size\":\"";
-            output += file.size();
-        }
-
-        output += "\",\"name\":\"";
-        // Always return names without leading "/"
-        if (file.name()[0] == '/') {
-            output += &(file.name()[1]);
-            name = file.name();  // name in map should contain leading "/"
-        }
-        else {
-            output += file.name();
-            name = '/' + file.name();  // name in map should contain leading "/"
-        }
-
-        output += "\"}";
-
-        files_data.insert(std::make_pair(name, output));
-        output.clear();
-    }
-
-    // Sort file list before building output.
-    // NOTE: SPIFFS doesn't support directories! Path <directory_name/filename> can exist, but directory, as entity,
-    // not. Directories are used just as part of path.
-    output = '[';
-    for (auto const& data_pair : files_data) {
-        output += data_pair.second + ',';
-    }
-    output.remove(output.length() - 1);
-    output += ']';
-
-    web_server_.sendContent(output);
+    auto output = Utils::FS::get_file_list_json(path);
+    web_server_.sendContent(Utils::FS::get_file_list_json(path));
 }
-
 
 // Handle the creation/rename of a new file
 // Operation      | req.responseText
@@ -354,95 +239,48 @@ SadLampWebServer::handle_file_create()
     if (path.isEmpty()) {
         return reply_bad_request("PATH ARG MISSING");
     }
-    if (check_for_unsupported_path(path).length() > 0) {
-        return reply_server_error("INVALID FILENAME");
-    }
-    if (path == "/") {
-        return reply_bad_request("BAD PATH");
-    }
-    if (SPIFFS.exists(path)) {
+    if (Utils::FS::exists(path)) {
         return reply_bad_request("FILE EXISTS");
     }
 
-    String src = web_server_.arg("src");
+    String src{web_server_.arg("src")};
     if (src.isEmpty()) {
         // No source specified: creation
         DEBUG_PRINTLN(String{"handle_file_create: "} + path);
         if (path.endsWith("/")) {
             // Create a folder
-            path.remove(path.length() - 1);
-            if (!SPIFFS.mkdir(path)) {
-                return reply_server_error("MKDIR FAILED");
+            auto result{Utils::FS::create_folder(std::move(path))};
+            if (!result.first) {
+                return reply_server_error(result.second);
             }
+            reply_ok_with_msg(result.second);
         }
         else {
             // Create a file
-            fs::File file = SPIFFS.open(path, "w");
-            if (file) {
-                file.write((const uint8_t*)0, 0);
-                file.close();
+            auto result{Utils::FS::create_file(std::move(path))};
+            if (!result.first) {
+                return reply_server_error(result.second);
             }
-            else {
-                return reply_server_error("CREATE FAILED");
-            }
+            Utils::FS::close(result.first);
+            reply_ok_with_msg(result.second);
         }
-        if (path.lastIndexOf('/') > -1) {
-            path = path.substring(0, path.lastIndexOf('/'));
-        }
-        reply_ok_with_msg(path);
     }
     else {
         // Source specified: rename
         if (src == "/") {
             return reply_bad_request("BAD SRC");
         }
-        if (!SPIFFS.exists(src)) {
+        if (!Utils::FS::exists(src)) {
             return reply_bad_request("SRC FILE NOT FOUND");
         }
 
-        DEBUG_PRINTLN(String{"handle_file_create: "} + path + " from " + src);
-
-        if (path.endsWith("/")) {
-            path.remove(path.length() - 1);
+        DEBUG_PRINTLN(String{"handle_file_create: renaming "} + src + " to " + path);
+        auto result{Utils::FS::rename(std::move(src), std::move(path))};
+        if (!result.first) {
+            return reply_server_error(result.second);
         }
-        if (src.endsWith("/")) {
-            src.remove(src.length() - 1);
-        }
-        if (!SPIFFS.rename(src, path)) {
-            return reply_server_error("RENAME FAILED");
-        }
-        reply_ok_with_msg(last_existing_parent(src));
+        reply_ok_with_msg(result.second);
     }
-}
-
-// Delete the file or folder designed by the given path.
-// If it's a file, delete it.
-// If it's a folder, delete all nested contents first then the folder itself
-
-// IMPORTANT NOTE: using recursion is generally not recommended on embedded devices and can lead to crashes
-// (stack overflow errors). It might crash in case of deeply nested filesystems.
-// Please don't do this on a production system.
-void
-SadLampWebServer::delete_recursive(String const& path)
-{
-    fs::File file  = SPIFFS.open(path, "r");
-    bool     isDir = file.isDirectory();
-    file.close();
-
-    // If it's a plain file, delete it
-    if (!isDir) {
-        SPIFFS.remove(path);
-        return;
-    }
-
-    // Otherwise delete its contents first
-    fs::File dir = SPIFFS.open(path);
-    while (File file = dir.openNextFile()) {
-        delete_recursive(path + '/' + file.name());
-    }
-
-    // Then delete the folder itself
-    SPIFFS.rmdir(path);
 }
 
 // Handle a file deletion request
@@ -458,18 +296,22 @@ SadLampWebServer::handle_file_delete()
         return;
     }
     String path{web_server_.arg(0)};
-    if (path.isEmpty() || path == "/") {
+    if (path.isEmpty()) {
+        return reply_bad_request("PATH ARG MISSING");
+    }
+    if (path == "/") {
         return reply_bad_request("BAD PATH");
+    }
+    if (!Utils::FS::exists(path)) {
+        return reply_not_found(FILE_NOT_FOUND);
     }
 
     DEBUG_PRINTLN(String{"handle_file_delete: "} + path);
-
-    if (!SPIFFS.exists(path)) {
-        return reply_not_found(FILE_NOT_FOUND);
+    auto result{Utils::FS::remove(path)};
+    if (!result.first) {
+        return reply_server_error(result.second);
     }
-    delete_recursive(path);
-
-    reply_ok_with_msg(last_existing_parent(path));
+    reply_ok_with_msg(result.second);
 }
 
 void
@@ -479,23 +321,19 @@ SadLampWebServer::handle_file_upload()
         return;
     }
 
-    HTTPUpload& upload = web_server_.upload();
+    HTTPUpload& upload{web_server_.upload()};
     if (upload.status == UPLOAD_FILE_START) {
-        String filename = upload.filename;
-        // Make sure paths always start with "/"
-        if (!filename.startsWith("/")) {
-            filename = "/" + filename;
+        DEBUG_PRINTLN(String{"handle_file_upload: filename: "} + upload.filename);
+        auto result{Utils::FS::create_file(std::move(upload.filename))};
+        if (!result.first) {
+            return reply_server_error(result.second);
         }
-        DEBUG_PRINTLN(String{"handle_file_upload Name: "} + filename);
-        upload_file_ = SPIFFS.open(filename, "w");
-        if (!upload_file_) {
-            return reply_server_error("CREATE FAILED");
-        }
-        DEBUG_PRINTLN(String{"Upload: START, filename: "} + filename);
+        upload_file_ = result.first;
+        DEBUG_PRINTLN("handle_file_upload: STARTED");
     }
     else if (upload.status == UPLOAD_FILE_WRITE) {
         if (upload_file_) {
-            size_t bytesWritten = upload_file_.write(upload.buf, upload.currentSize);
+            size_t bytesWritten{Utils::FS::write(upload_file_, upload.buf, upload.currentSize)};
             if (bytesWritten != upload.currentSize) {
                 return reply_server_error("WRITE FAILED");
             }
@@ -504,7 +342,7 @@ SadLampWebServer::handle_file_upload()
     }
     else if (upload.status == UPLOAD_FILE_END) {
         if (upload_file_) {
-            upload_file_.close();
+            Utils::FS::close(upload_file_);
         }
         DEBUG_PRINTLN(String{"Upload: END, Size: "} + String(upload.totalSize));
     }
@@ -519,28 +357,24 @@ SadLampWebServer::handle_file_read(String path)
         path += "index.htm";
     }
 
-    String contentType;
-    if (web_server_.hasArg("download")) {
-        contentType = "application/octet-stream";
-    }
-    else {
-        contentType = getContentType(path);
-    }
-
-    if (!SPIFFS.exists(path)) {
+    String contentType{web_server_.hasArg("download") ? "application/octet-stream" : getContentType(path)};
+    if (!Utils::FS::is_file(path)) {
         // File not found, try gzip version
-        path = path + ".gz";
-    }
-    if (SPIFFS.exists(path)) {
-        fs::File file = SPIFFS.open(path, "r");
-        if (web_server_.streamFile(file, contentType) != file.size()) {
-            DEBUG_PRINTLN("Sent less data than expected!");
-        }
-        file.close();
-        return true;
+        path += ".gz";
     }
 
-    return false;
+    if (!Utils::FS::is_file(path)) {
+        return false;
+    }
+
+    Utils::FS::File file{Utils::FS::open(path, Utils::FS::OpenMode::kRead)};
+    if (web_server_.streamFile(file, contentType) != file.size()) {
+        DEBUG_PRINTLN("Sent less data than expected!");
+        Utils::FS::close(file);
+        return false;
+    }
+    Utils::FS::close(file);
+    return true;
 }
 
 void
@@ -556,7 +390,7 @@ SadLampWebServer::handle_esp_sw_upload()
         return;
     }
 
-    HTTPUpload& upload = web_server_.upload();
+    HTTPUpload& upload{web_server_.upload()};
     if (upload.status == UPLOAD_FILE_START) {
         // TODO(migration to ESP32): use new code for update from examples for ESP32 (+ adaptions). Test it!
         auto file_size = web_server_.arg("file_size").toInt();
@@ -566,7 +400,7 @@ SadLampWebServer::handle_esp_sw_upload()
                 Update.printError(DGB_STREAM);
                 esp_firmware_upload_error_ =
                     "ERROR: not enough space on SPIFFS (upload.name == 'filesystem')! Available: " +
-                    String(SPIFFS.totalBytes());
+                    String{Utils::FS::total_bytes() - Utils::FS::used_bytes()};
                 return;
             }
         }
@@ -576,7 +410,7 @@ SadLampWebServer::handle_esp_sw_upload()
                 Update.printError(DGB_STREAM);
                 esp_firmware_upload_error_ =
                     "ERROR: not enough space on U_FLASH (upload.name != 'filesystem')! Available: " +
-                    String(ESP.getFreeSketchSpace());
+                    String{ESP.getFreeSketchSpace()};
                 return;
             }
         }
