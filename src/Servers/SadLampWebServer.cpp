@@ -6,6 +6,17 @@
 
 #include "src/Utils/Logger.h"
 
+// NOTE!
+// There is a bug in WebServer. In short: it supports only 1 connection at a time. So, if browser opens another
+// connection in parallel, it leads to waiting for HTTP_MAX_DATA_WAIT (5 s) unitl incomming request will be processed
+// In more details it is described here:
+// https://www.reddit.com/r/esp8266/comments/ohrqyp/slow_http_web_server_response_time/
+// Solution is to apply patch from here: https://github.com/esp8266/Arduino/pull/8216
+// It seems to be applied in neew versions of Arduino Core for ESP8266, but not sure if they will apply it for ESP32.
+// I applied simplified version (the forst on page, not entire pull-request) - it seems work. BUT if you read details,
+// you will see that it will cause problems in case several clients will want to work with ESP in parallel. But this is
+// not my case, so I'm OK with this solution, at least till proper solution will appear in Arduino Core for ESP32
+
 namespace
 {
 static const char TEXT_PLAIN[]     = "text/plain";
@@ -368,6 +379,11 @@ SadLampWebServer::handle_file_read(String path)
     }
 
     Utils::FS::File file{Utils::FS::open(path, Utils::FS::OpenMode::kRead)};
+    if (!file) {
+        reply_server_error("OPENING FILE FAILED");
+        return false;
+    }
+
     if (web_server_.streamFile(file, contentType) != file.size()) {
         DEBUG_PRINTLN("Sent less data than expected!");
         Utils::FS::close(file);
@@ -396,8 +412,7 @@ SadLampWebServer::handle_esp_sw_upload()
         if (!Update.begin(file_size)) {
             Update.end();
             Update.printError(DGB_STREAM);
-            esp_firmware_upload_error_ =
-                "ERROR: not enough space! Available: " + String(ESP.getFreeSketchSpace());
+            esp_firmware_upload_error_ = "ERROR: not enough space! Available: " + String(ESP.getFreeSketchSpace());
             return;
         }
 

@@ -28,7 +28,7 @@ public:
     static String                  get_file_list_json(String const& path);
     static std::pair<File, String> create_file(String path);
     static std::pair<bool, String> create_folder(String path);
-    static bool                    close(File& file);
+    static void                    close(File& file);
     static std::pair<bool, String> rename(String from, String to);
     static std::pair<bool, String> remove(String const& path);
     static File                    open(String const& path, OpenMode mode = OpenMode::kRead);

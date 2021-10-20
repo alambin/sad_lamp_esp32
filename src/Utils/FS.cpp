@@ -229,7 +229,7 @@ FS::create_folder(String path)
     return {true, path};
 }
 
-bool
+void
 FS::close(File& file)
 {
     file.close();
