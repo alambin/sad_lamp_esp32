@@ -51,7 +51,7 @@ setup()
     SSDP_init();
     ftp_init();
 
-    // TODO: in 1/4 times after reboot ESP32 can not connect with previous WiFi settings and you have to reset it
+    // TODO: in 1/4-1/10 times after reboot ESP32 can not connect with previous WiFi settings and you have to reset it
     // manually 1 more time
     web_server.set_handler(Servers::SadLampWebServer::Event::REBOOT_ESP,
                            [&is_reboot_requested](String const& filename) { is_reboot_requested = true; });

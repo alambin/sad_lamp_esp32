@@ -52,6 +52,7 @@ connection.onmessage = function (message) {
 };
 
 var uploaded_file_size = 0;
+var upload_start_time_ms = 0;
 
 var command_in_progress = "";
 var upload_esp_firmware_cmd = "upload_esp_firmware";
@@ -96,6 +97,8 @@ function upload_esp_file() {
   ajax.send(formdata);
 
   _("upload_status").style.color = "black";
+  upload_start_time_ms = (new Date()).getTime();
+  console.log("LAMBIN upload_start_time_ms = " + upload_start_time_ms);
 }
 
 function upload_progress_handler(event) {
@@ -104,7 +107,11 @@ function upload_progress_handler(event) {
   var loaded = event.loaded - extra_data_size;
   if (loaded < 0) loaded = 0;
 
-  _("uploaded_size").innerHTML = "Uploaded " + loaded + " bytes of " + uploaded_file_size;
+  var seconds_passed = ((new Date()).getTime() - upload_start_time_ms) / 1000;
+  var upload_skeed_kbs = loaded / (1024 * seconds_passed);
+  console.log("LAMBIN upload_skeed_kbs = " + Math.round(upload_skeed_kbs));
+  _("uploaded_size").innerHTML = "Uploaded " + loaded + " bytes of " + uploaded_file_size
+    + " (" + Math.round(upload_skeed_kbs) + " kB/s)";
   var percent = (loaded / uploaded_file_size) * 100;
   _("upload_progress_bar").value = Math.round(percent);
   _("upload_status").innerHTML = Math.round(percent) + "% uploaded... please wait";
