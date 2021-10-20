@@ -392,38 +392,16 @@ SadLampWebServer::handle_esp_sw_upload()
 
     HTTPUpload& upload{web_server_.upload()};
     if (upload.status == UPLOAD_FILE_START) {
-        // TODO(migration to ESP32): use new code for update from examples for ESP32 (+ adaptions). Test it!
         auto file_size = web_server_.arg("file_size").toInt();
-        if (upload.name == "filesystem") {
-            if (!Update.begin(file_size, U_SPIFFS)) {
-                Update.end();
-                Update.printError(DGB_STREAM);
-                esp_firmware_upload_error_ =
-                    "ERROR: not enough space on SPIFFS (upload.name == 'filesystem')! Available: " +
-                    String{Utils::FS::total_bytes() - Utils::FS::used_bytes()};
-                return;
-            }
+        if (!Update.begin(file_size)) {
+            Update.end();
+            Update.printError(DGB_STREAM);
+            esp_firmware_upload_error_ =
+                "ERROR: not enough space! Available: " + String(ESP.getFreeSketchSpace());
+            return;
         }
-        else {
-            if (!Update.begin(file_size, U_FLASH)) {  // start with max available size
-                Update.end();
-                Update.printError(DGB_STREAM);
-                esp_firmware_upload_error_ =
-                    "ERROR: not enough space on U_FLASH (upload.name != 'filesystem')! Available: " +
-                    String{ESP.getFreeSketchSpace()};
-                return;
-            }
-        }
-        // if (!Update.begin(file_size)) {
-        //     Update.end();
-        //     Update.printError(DGB_STREAM);
-        //     esp_firmware_upload_error_ =
-        //         "ERROR: not enough space! Available: ") + String(ESP.getFreeSketchSpace();
-        //     return;
-        // }
 
         DGB_STREAM.setDebugOutput(true);
-        // WiFiUDP::stop();
         DEBUG_PRINTLN(String{"Start uploading file: "} + upload.filename);
         esp_firmware_upload_error_ = "";
     }
