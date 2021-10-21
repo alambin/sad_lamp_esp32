@@ -40,7 +40,6 @@ DebugServer::loop()
 {
     static unsigned long last_print{0};
     if (millis() - last_print > 1000) {
-        // DEBUG_PRINT("+");  // TODO: just debug. Remove it in final version
         send_buffered_logs();
         last_print = millis();
     }

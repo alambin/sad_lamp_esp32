@@ -16,6 +16,9 @@
 // I applied simplified version (the forst on page, not entire pull-request) - it seems work. BUT if you read details,
 // you will see that it will cause problems in case several clients will want to work with ESP in parallel. But this is
 // not my case, so I'm OK with this solution, at least till proper solution will appear in Arduino Core for ESP32
+//
+// Pay attention that in case of upgrade to newer version of Arduino Core for ESP32 you may need to apply this patch
+// again (if they will not provide proper fix)
 
 namespace
 {

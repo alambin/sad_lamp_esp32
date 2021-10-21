@@ -1,6 +1,8 @@
 #ifndef SRC_UTILS_LOGGER_H_
 #define SRC_UTILS_LOGGER_H_
 
+#include <HardwareSerial.h>
+
 // #define DBG_OUTPUT_PORT_SERIAL
 // #define DBG_OUTPUT_PORT_WEB
 #define DBG_OUTPUT_PORT_BOTH
