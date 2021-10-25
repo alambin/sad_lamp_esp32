@@ -1,4 +1,4 @@
-#include "potentiometer.h"
+#include "Potentiometer.h"
 
 #include <esp32-hal-gpio.h>
 #include "src/Utils/Logger.h"

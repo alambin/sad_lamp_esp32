@@ -9,6 +9,8 @@ public:
     Potentiometer(uint8_t pin, uint32_t sampling_ms);
     void     setup();
     void     loop();
+
+    // 0-4095
     uint16_t read() const;
 
 private:
