@@ -15,6 +15,8 @@ public:
         kSunraiseDurationMinutes,  // 2 bytes
         kFanPwmFrequency,          // 2 bytes
         kFanPwmStepsNumber,        // 1 byte
+        kPotentiometerMinVal,      // 2 bytes
+        kPotentiometerMaxVal       // 2 bytes
     };
 
     Persistency(Persistency const&) = delete;
@@ -28,6 +30,9 @@ public:
     void     set_byte(Variable variable, uint8_t value);
     uint16_t get_word(Variable variable);
     void     set_word(Variable variable, uint16_t value);
+
+    bool is_variable_stored(Variable variable);
+    void clear();
 
 private:
     Persistency();

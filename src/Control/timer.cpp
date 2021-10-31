@@ -42,6 +42,20 @@ Timer::Timer(unsigned long reading_period_ms)
 void
 Timer::setup()
 {
+    // Rework this code as it is done in Potentiometer: consider 1st run, when these variables are not set.
+    if (!Persistency::instance().is_variable_stored(Persistency::kAlarmHours)) {
+        Persistency::instance().set_byte(Persistency::kAlarmHours, 0);
+    }
+    if (!Persistency::instance().is_variable_stored(Persistency::kAlarmMinutes)) {
+        Persistency::instance().set_byte(Persistency::kAlarmMinutes, 0);
+    }
+    if (!Persistency::instance().is_variable_stored(Persistency::kAlarmDow)) {
+        Persistency::instance().set_byte(Persistency::kAlarmDow, 0);
+    }
+    if (!Persistency::instance().is_variable_stored(Persistency::kIsAlarmOn)) {
+        Persistency::instance().set_byte(Persistency::kIsAlarmOn, 0);
+    }
+
     alarm_.hour       = Persistency::instance().get_byte(Persistency::kAlarmHours);
     alarm_.minute     = Persistency::instance().get_byte(Persistency::kAlarmMinutes);
     alarm_.dow        = static_cast<Timer::DaysOfWeek>(Persistency::instance().get_byte(Persistency::kAlarmDow));
@@ -181,7 +195,7 @@ Timer::toggle_alarm()
         Persistency::instance().set_byte(Persistency::kIsAlarmOn, 1);
     }
 
-    DEBUG_PRINTLN(String{"Alarm is "} + (is_alarm_enabled_ ? F("enabled") : F("disabled")));
+    DEBUG_PRINTLN(String{"Alarm is "} + (is_alarm_enabled_ ? "enabled" : "disabled"));
 }
 
 Timer::AlarmData::AlarmData()
@@ -259,7 +273,7 @@ Timer::datetime_to_str(const tmElements_t& datetime) const
     // A terminating null character is automatically appended by snprintf
     snprintf_P(str,
                20,
-               PSTR("%02d:%02d:%02d %02d/%02d/%04d"),
+               "%02d:%02d:%02d %02d/%02d/%04d",
                datetime.Hour,
                datetime.Minute,
                datetime.Second,
