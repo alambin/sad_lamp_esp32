@@ -59,11 +59,11 @@ ThermoSensors::setup()
     sensors_.begin();
 
     DEBUG_PRINTLN(String{"Found "} + String{sensors_.getDeviceCount()} + " thermal sensors.");
-    if (sensors_.getDeviceCount() < kNumOfSensors_) {
-        DEBUG_PRINTLN(String{"ERROR: expected number of sensors is "} + String{kNumOfSensors_});
+    if (sensors_.getDeviceCount() < num_of_sensors_) {
+        DEBUG_PRINTLN(String{"ERROR: expected number of sensors is "} + String{num_of_sensors_});
     }
 
-    for (int i = 0; i < kNumOfSensors_; ++i) {
+    for (int i = 0; i < num_of_sensors_; ++i) {
         if (sensors_.getAddress(addresses_[i], i)) {
             sensors_.setResolution(addresses_[i], resolution_);
         }
